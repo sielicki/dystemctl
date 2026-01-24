@@ -1,32 +1,26 @@
-name: Nix
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Check flake
-        run: nix flake check
-
-      - name: Build package
-        run: nix build
-
-      - name: Test systemctl --help
-        run: nix run .#systemctl -- --help
-
-      - name: Test journalctl --help
-        run: nix run .#journalctl -- --help
+    - uses: actions/checkout@v4
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+    - name: Setup Nix cache
+      uses: DeterminateSystems/magic-nix-cache-action@main
+    - name: Check flake
+      run: nix flake check
+    - name: Build package
+      run: nix build
+    - name: Test systemctl --help
+      run: nix run .#systemctl -- --help
+    - name: Test journalctl --help
+      run: nix run .#journalctl -- --help
+name: Nix
+'on':
+  pull_request:
+    branches:
+    - main
+  push:
+    branches:
+    - main
+  workflow_dispatch: {}
