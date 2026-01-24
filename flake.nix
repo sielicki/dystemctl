@@ -204,7 +204,7 @@
                 ];
               };
 
-              build-sdist = {
+              build = {
                 runs-on = "macos-latest";
                 needs = [ "test" ];
                 steps = [
@@ -219,44 +219,15 @@
                     run = "uv python install 3.13";
                   }
                   {
-                    name = "Build sdist";
-                    run = "uv build --sdist";
+                    name = "Build package";
+                    run = "uv build";
                   }
                   {
-                    name = "Upload sdist";
+                    name = "Upload dist";
                     uses = "actions/upload-artifact@v4";
                     "with" = {
-                      name = "sdist";
-                      path = "dist/*.tar.gz";
-                    };
-                  }
-                ];
-              };
-
-              build-wheels = {
-                runs-on = "\${{ matrix.os }}";
-                needs = [ "test" ];
-                strategy.matrix.os = [
-                  "macos-13"
-                  "macos-14"
-                ];
-                steps = [
-                  { uses = "actions/checkout@v4"; }
-                  {
-                    name = "Build wheels";
-                    uses = "pypa/cibuildwheel@v2.22";
-                    env = {
-                      CIBW_BUILD = "cp312-* cp313-*";
-                      CIBW_ARCHS_MACOS = "native";
-                      CIBW_TEST_COMMAND = ''python -c "import dystemctl; print(dystemctl.__file__)"'';
-                    };
-                  }
-                  {
-                    name = "Upload wheels";
-                    uses = "actions/upload-artifact@v4";
-                    "with" = {
-                      name = "wheels-\${{ matrix.os }}";
-                      path = "wheelhouse/*.whl";
+                      name = "dist";
+                      path = "dist/*";
                     };
                   }
                 ];
@@ -264,20 +235,14 @@
 
               publish = {
                 runs-on = "macos-latest";
-                needs = [
-                  "build-sdist"
-                  "build-wheels"
-                ];
+                needs = [ "build" ];
                 "if" = "startsWith(github.ref, 'refs/tags/v')";
                 permissions.id-token = "write";
                 steps = [
                   {
-                    name = "Download all wheels";
+                    name = "Download dist";
                     uses = "actions/download-artifact@v4";
-                    "with" = {
-                      path = "dist";
-                      merge-multiple = true;
-                    };
+                    "with".name = "dist";
                   }
                   {
                     name = "Publish to PyPI";
@@ -289,21 +254,15 @@
 
               release = {
                 runs-on = "macos-latest";
-                needs = [
-                  "build-sdist"
-                  "build-wheels"
-                ];
+                needs = [ "build" ];
                 "if" = "startsWith(github.ref, 'refs/tags/v')";
                 permissions.contents = "write";
                 steps = [
                   { uses = "actions/checkout@v4"; }
                   {
-                    name = "Download all artifacts";
+                    name = "Download dist";
                     uses = "actions/download-artifact@v4";
-                    "with" = {
-                      path = "dist";
-                      merge-multiple = true;
-                    };
+                    "with".name = "dist";
                   }
                   {
                     name = "Create GitHub Release";

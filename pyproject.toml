@@ -47,14 +47,6 @@ dev = [
     "pytest-cov>=4.0.0",
 ]
 
-[tool.cibuildwheel]
-build = "cp312-* cp313-*"
-skip = "*-win* *-linux* *-musllinux*"
-test-command = "python -c \"import dystemctl; print(dystemctl.__file__)\""
-
-[tool.cibuildwheel.macos]
-archs = ["x86_64", "arm64"]
-
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "0.1.0"
