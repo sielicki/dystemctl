@@ -24,7 +24,7 @@ jobs:
     - build
     permissions:
       id-token: write
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Download dist
       uses: actions/download-artifact@v7
