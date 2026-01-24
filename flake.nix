@@ -439,6 +439,15 @@
 
                 ruff.enable = true;
                 ruff-format.enable = true;
+
+                write-files = {
+                  enable = true;
+                  name = "write-files";
+                  description = "Regenerate files from Nix definitions";
+                  entry = "${config.files.writer.drv}/bin/write-files";
+                  files = "\\.nix$";
+                  pass_filenames = false;
+                };
               };
             };
           };
