@@ -28,6 +28,7 @@ ENV/
 # Nix
 result
 result-*
+.pre-commit-config.yaml
 
 # IDE
 .idea/
