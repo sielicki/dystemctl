@@ -234,7 +234,7 @@
               };
 
               publish = {
-                runs-on = "macos-latest";
+                runs-on = "ubuntu-latest";
                 needs = [ "build" ];
                 "if" = "startsWith(github.ref, 'refs/tags/v')";
                 permissions.id-token = "write";
