@@ -1,0 +1,75 @@
+[project]
+name = "dystemctl"
+version = "0.1.0"
+description = "systemd emulation for Darwin - provides systemctl/journalctl on macOS"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "sielicki" }]
+keywords = ["systemd", "launchd", "macos", "darwin", "systemctl", "journalctl"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "shellingham>=1.5.0",
+]
+
+[project.scripts]
+dystemctl = "dystemctl:main"
+systemctl = "dystemctl:main"
+journalctl = "dystemctl:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dystemctl"]
+
+[tool.hatch.build.targets.sdist]
+include = ["dystemctl/", "pyproject.toml", "README.md"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.cibuildwheel]
+build = "cp312-* cp313-*"
+skip = "*-win* *-linux* *-musllinux*"
+test-command = "python -c \"import dystemctl; print(dystemctl.__file__)\""
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+version_files = [
+    "pyproject.toml:^version",
+    "dystemctl/__init__.py:^__version__",
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4"]
+ignore = ["E501"]

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":automergeMinor",
+    ":automergeDigest",
+    "group:allNonMajor"
+  ],
+  "labels": ["dependencies"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "America/Los_Angeles",
+  "packageRules": [
+    {
+      "description": "Python dependencies",
+      "matchManagers": ["pip_requirements", "pep621"],
+      "groupName": "python dependencies"
+    },
+    {
+      "description": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "automerge": true
+    },
+    {
+      "description": "Nix flake inputs",
+      "matchManagers": ["nix"],
+      "groupName": "nix flake inputs"
+    },
+    {
+      "description": "Homebrew formula resources",
+      "matchFileNames": ["Formula/*.rb"],
+      "enabled": false
+    },
+    {
+      "description": "Auto-merge patch updates",
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Auto-merge dev dependencies",
+      "matchDepTypes": ["devDependencies", "dev"],
+      "automerge": true
+    }
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  }
+}
