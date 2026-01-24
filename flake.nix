@@ -357,6 +357,46 @@
               ];
             };
           };
+
+          # Homebrew workflow
+          homebrewWorkflow = {
+            name = "Homebrew";
+            on = {
+              push.branches = [ "main" ];
+              pull_request.branches = [ "main" ];
+              workflow_dispatch = { };
+            };
+            jobs.build = {
+              runs-on = "macos-latest";
+              steps = [
+                { uses = "actions/checkout@v4"; }
+                {
+                  name = "Set up Homebrew";
+                  uses = "Homebrew/actions/setup-homebrew@master";
+                }
+                {
+                  name = "Tap local formula";
+                  run = "brew tap-new --no-git local/dystemctl && cp Formula/dystemctl.rb $(brew --repository local/dystemctl)/Formula/";
+                }
+                {
+                  name = "Install from source";
+                  run = "brew install --build-from-source --verbose local/dystemctl/dystemctl";
+                }
+                {
+                  name = "Test systemctl";
+                  run = "brew test local/dystemctl/dystemctl";
+                }
+                {
+                  name = "Test commands";
+                  run = ''
+                    systemctl --help
+                    journalctl --help
+                    systemctl status | head -20
+                  '';
+                }
+              ];
+            };
+          };
         in
         {
           treefmt = {
@@ -416,6 +456,10 @@
             {
               path_ = ".github/workflows/nix.yml";
               drv = yaml.generate "nix.yml" nixWorkflow;
+            }
+            {
+              path_ = ".github/workflows/homebrew.yml";
+              drv = yaml.generate "homebrew.yml" homebrewWorkflow;
             }
           ];
 
