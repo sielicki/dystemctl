@@ -16,6 +16,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    files = {
+      url = "github:mightyiam/files";
+    };
+
     uv2nix = {
       url = "github:pyproject-nix/uv2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -43,6 +47,7 @@
       flake-parts,
       treefmt-nix,
       git-hooks-nix,
+      files,
       uv2nix,
       pyproject-nix,
       pyproject-build-systems,
@@ -57,6 +62,7 @@
       imports = [
         treefmt-nix.flakeModule
         git-hooks-nix.flakeModule
+        files.flakeModules.default
       ];
 
       perSystem =
@@ -66,6 +72,7 @@
           inputs',
           pkgs,
           system,
+          lib,
           ...
         }:
         let
@@ -85,6 +92,271 @@
           );
 
           venv = pythonSet.mkVirtualEnv "dystemctl-env" workspace.deps.default;
+
+          # YAML format helper
+          yaml = pkgs.formats.yaml { };
+
+          # Renovate configuration
+          renovateConfig = {
+            "$schema" = "https://docs.renovatebot.com/renovate-schema.json";
+            extends = [
+              "config:recommended"
+              ":semanticCommits"
+              ":automergeMinor"
+              ":automergeDigest"
+              "group:allNonMajor"
+            ];
+            labels = [ "dependencies" ];
+            schedule = [ "before 6am on monday" ];
+            timezone = "America/Los_Angeles";
+            packageRules = [
+              {
+                description = "Python dependencies";
+                matchManagers = [
+                  "pip_requirements"
+                  "pep621"
+                ];
+                groupName = "python dependencies";
+              }
+              {
+                description = "GitHub Actions";
+                matchManagers = [ "github-actions" ];
+                groupName = "github actions";
+                automerge = true;
+              }
+              {
+                description = "Nix flake inputs";
+                matchManagers = [ "nix" ];
+                groupName = "nix flake inputs";
+              }
+              {
+                description = "Homebrew formula resources";
+                matchFileNames = [ "Formula/*.rb" ];
+                enabled = false;
+              }
+              {
+                description = "Auto-merge patch updates";
+                matchUpdateTypes = [ "patch" ];
+                automerge = true;
+              }
+              {
+                description = "Auto-merge dev dependencies";
+                matchDepTypes = [
+                  "devDependencies"
+                  "dev"
+                ];
+                automerge = true;
+              }
+            ];
+            nix.enabled = true;
+            lockFileMaintenance = {
+              enabled = true;
+              schedule = [ "before 6am on the first day of the month" ];
+            };
+          };
+
+          # Build workflow
+          buildWorkflow = {
+            name = "Build";
+            on = {
+              push = {
+                branches = [ "main" ];
+                tags = [ "v*" ];
+              };
+              pull_request.branches = [ "main" ];
+              workflow_dispatch = { };
+            };
+            jobs = {
+              test = {
+                runs-on = "macos-latest";
+                strategy.matrix.python-version = [
+                  "3.12"
+                  "3.13"
+                ];
+                steps = [
+                  { uses = "actions/checkout@v4"; }
+                  {
+                    name = "Install uv";
+                    uses = "astral-sh/setup-uv@v4";
+                    "with".version = "latest";
+                  }
+                  {
+                    name = "Set up Python \${{ matrix.python-version }}";
+                    run = "uv python install \${{ matrix.python-version }}";
+                  }
+                  {
+                    name = "Install dependencies";
+                    run = "uv sync --dev";
+                  }
+                  {
+                    name = "Run tests";
+                    run = "uv run pytest tests/ --cov=dystemctl --cov-report=xml";
+                  }
+                  {
+                    name = "Upload coverage";
+                    uses = "codecov/codecov-action@v4";
+                    "if" = "matrix.python-version == '3.13'";
+                    "with" = {
+                      files = "coverage.xml";
+                      fail_ci_if_error = false;
+                    };
+                  }
+                ];
+              };
+
+              build-sdist = {
+                runs-on = "macos-latest";
+                needs = [ "test" ];
+                steps = [
+                  { uses = "actions/checkout@v4"; }
+                  {
+                    name = "Install uv";
+                    uses = "astral-sh/setup-uv@v4";
+                    "with".version = "latest";
+                  }
+                  {
+                    name = "Set up Python";
+                    run = "uv python install 3.13";
+                  }
+                  {
+                    name = "Build sdist";
+                    run = "uv build --sdist";
+                  }
+                  {
+                    name = "Upload sdist";
+                    uses = "actions/upload-artifact@v4";
+                    "with" = {
+                      name = "sdist";
+                      path = "dist/*.tar.gz";
+                    };
+                  }
+                ];
+              };
+
+              build-wheels = {
+                runs-on = "\${{ matrix.os }}";
+                needs = [ "test" ];
+                strategy.matrix.os = [
+                  "macos-13"
+                  "macos-14"
+                ];
+                steps = [
+                  { uses = "actions/checkout@v4"; }
+                  {
+                    name = "Build wheels";
+                    uses = "pypa/cibuildwheel@v2.22";
+                    env = {
+                      CIBW_BUILD = "cp312-* cp313-*";
+                      CIBW_ARCHS_MACOS = "native";
+                      CIBW_TEST_COMMAND = ''python -c "import dystemctl; print(dystemctl.__file__)"'';
+                    };
+                  }
+                  {
+                    name = "Upload wheels";
+                    uses = "actions/upload-artifact@v4";
+                    "with" = {
+                      name = "wheels-\${{ matrix.os }}";
+                      path = "wheelhouse/*.whl";
+                    };
+                  }
+                ];
+              };
+
+              publish = {
+                runs-on = "macos-latest";
+                needs = [
+                  "build-sdist"
+                  "build-wheels"
+                ];
+                "if" = "startsWith(github.ref, 'refs/tags/v')";
+                permissions.id-token = "write";
+                steps = [
+                  {
+                    name = "Download all wheels";
+                    uses = "actions/download-artifact@v4";
+                    "with" = {
+                      path = "dist";
+                      merge-multiple = true;
+                    };
+                  }
+                  {
+                    name = "Publish to PyPI";
+                    uses = "pypa/gh-action-pypi-publish@release/v1";
+                    "with".skip-existing = true;
+                  }
+                ];
+              };
+
+              release = {
+                runs-on = "macos-latest";
+                needs = [
+                  "build-sdist"
+                  "build-wheels"
+                ];
+                "if" = "startsWith(github.ref, 'refs/tags/v')";
+                permissions.contents = "write";
+                steps = [
+                  { uses = "actions/checkout@v4"; }
+                  {
+                    name = "Download all artifacts";
+                    uses = "actions/download-artifact@v4";
+                    "with" = {
+                      path = "dist";
+                      merge-multiple = true;
+                    };
+                  }
+                  {
+                    name = "Create GitHub Release";
+                    uses = "softprops/action-gh-release@v2";
+                    "with" = {
+                      files = "dist/*";
+                      generate_release_notes = true;
+                    };
+                  }
+                ];
+              };
+            };
+          };
+
+          # Nix workflow
+          nixWorkflow = {
+            name = "Nix";
+            on = {
+              push.branches = [ "main" ];
+              pull_request.branches = [ "main" ];
+              workflow_dispatch = { };
+            };
+            jobs.build = {
+              runs-on = "macos-latest";
+              steps = [
+                { uses = "actions/checkout@v4"; }
+                {
+                  name = "Install Nix";
+                  uses = "DeterminateSystems/nix-installer-action@main";
+                }
+                {
+                  name = "Setup Nix cache";
+                  uses = "DeterminateSystems/magic-nix-cache-action@main";
+                }
+                {
+                  name = "Check flake";
+                  run = "nix flake check";
+                }
+                {
+                  name = "Build package";
+                  run = "nix build";
+                }
+                {
+                  name = "Test systemctl --help";
+                  run = "nix run .#systemctl -- --help";
+                }
+                {
+                  name = "Test journalctl --help";
+                  run = "nix run .#journalctl -- --help";
+                }
+              ];
+            };
+          };
         in
         {
           treefmt = {
@@ -131,6 +403,22 @@
             };
           };
 
+          # Generated files
+          files.files = [
+            {
+              path_ = ".github/renovate.json";
+              drv = pkgs.writeText "renovate.json" (builtins.toJSON renovateConfig);
+            }
+            {
+              path_ = ".github/workflows/build.yml";
+              drv = yaml.generate "build.yml" buildWorkflow;
+            }
+            {
+              path_ = ".github/workflows/nix.yml";
+              drv = yaml.generate "nix.yml" nixWorkflow;
+            }
+          ];
+
           packages = {
             default = venv;
             dystemctl = pythonSet.dystemctl;
@@ -164,6 +452,7 @@
               pkgs.uv
               pkgs.git-cliff
               pkgs.commitizen
+              config.files.writer.drv
             ];
 
             shellHook = ''
