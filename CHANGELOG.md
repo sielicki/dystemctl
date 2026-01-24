@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Remove/replace cibuildwheel by @sielicki
 - Add permissions so fh cache works by @sielicki
-- Run PyPI publish on ubuntu-latest
+- Run pypi publish on ubuntu-latest
 
 ### Features
 
