@@ -441,7 +441,7 @@
 
             changelog = pkgs.runCommand "changelog" { } ''
               cd ${self}
-              ${pkgs.git-cliff}/bin/git-cliff --config ${./cliff.toml} > $out
+              ${pkgs.git-cliff}/bin/git-cliff > $out
             '';
           };
 
