@@ -174,10 +174,10 @@
                   "3.13"
                 ];
                 steps = [
-                  { uses = "actions/checkout@v4"; }
+                  { uses = "actions/checkout@v6"; }
                   {
                     name = "Install uv";
-                    uses = "astral-sh/setup-uv@v4";
+                    uses = "astral-sh/setup-uv@v7";
                     "with".version = "latest";
                   }
                   {
@@ -194,7 +194,7 @@
                   }
                   {
                     name = "Upload coverage";
-                    uses = "codecov/codecov-action@v4";
+                    uses = "codecov/codecov-action@v5";
                     "if" = "matrix.python-version == '3.13'";
                     "with" = {
                       files = "coverage.xml";
@@ -208,10 +208,10 @@
                 runs-on = "macos-latest";
                 needs = [ "test" ];
                 steps = [
-                  { uses = "actions/checkout@v4"; }
+                  { uses = "actions/checkout@v6"; }
                   {
                     name = "Install uv";
-                    uses = "astral-sh/setup-uv@v4";
+                    uses = "astral-sh/setup-uv@v7";
                     "with".version = "latest";
                   }
                   {
@@ -224,7 +224,7 @@
                   }
                   {
                     name = "Upload dist";
-                    uses = "actions/upload-artifact@v4";
+                    uses = "actions/upload-artifact@v6";
                     "with" = {
                       name = "dist";
                       path = "dist/*";
@@ -241,7 +241,7 @@
                 steps = [
                   {
                     name = "Download dist";
-                    uses = "actions/download-artifact@v4";
+                    uses = "actions/download-artifact@v7";
                     "with".name = "dist";
                   }
                   {
@@ -258,10 +258,10 @@
                 "if" = "startsWith(github.ref, 'refs/tags/v')";
                 permissions.contents = "write";
                 steps = [
-                  { uses = "actions/checkout@v4"; }
+                  { uses = "actions/checkout@v6"; }
                   {
                     name = "Download dist";
-                    uses = "actions/download-artifact@v4";
+                    uses = "actions/download-artifact@v7";
                     "with".name = "dist";
                   }
                   {
@@ -288,7 +288,7 @@
             jobs.build = {
               runs-on = "macos-latest";
               steps = [
-                { uses = "actions/checkout@v4"; }
+                { uses = "actions/checkout@v6"; }
                 {
                   name = "Install Nix";
                   uses = "DeterminateSystems/nix-installer-action@main";
@@ -328,7 +328,7 @@
             jobs.build = {
               runs-on = "macos-latest";
               steps = [
-                { uses = "actions/checkout@v4"; }
+                { uses = "actions/checkout@v6"; }
                 {
                   name = "Set up Homebrew";
                   uses = "Homebrew/actions/setup-homebrew@master";
