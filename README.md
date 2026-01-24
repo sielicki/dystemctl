@@ -46,16 +46,21 @@ Or install directly from the repository:
 brew install --HEAD sielicki/dystemctl/dystemctl
 ```
 
-### uv/uvx
+### pip/uv/uvx
 
 ```bash
+# From PyPI
+pip install dystemctl
+uv tool install dystemctl
+
+# Or from git for latest
 uv tool install git+https://github.com/sielicki/dystemctl.git
 ```
 
-### run just once
+### Run without installing
 
 ```bash
-uvx --from git+https://github.com/sielicki/dystemctl.git systemctl status -n 1 emacs
+uvx --from dystemctl systemctl status
 ● homebrew.mxcl.emacs-plus@30 - emacs-plus@30
      Loaded: loaded (/opt/homebrew/Cellar/emacs-plus@30/30.2/homebrew.mxcl.emacs-plus@30.plist; enabled)
      Active: active (running) since Fri 2026-01-23 22:16:43; 1h 32min ago
