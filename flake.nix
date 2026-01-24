@@ -242,7 +242,10 @@
                   {
                     name = "Download dist";
                     uses = "actions/download-artifact@v7";
-                    "with".name = "dist";
+                    "with" = {
+                      name = "dist";
+                      path = "dist";
+                    };
                   }
                   {
                     name = "Publish to PyPI";
@@ -262,7 +265,10 @@
                   {
                     name = "Download dist";
                     uses = "actions/download-artifact@v7";
-                    "with".name = "dist";
+                    "with" = {
+                      name = "dist";
+                      path = "dist";
+                    };
                   }
                   {
                     name = "Create GitHub Release";

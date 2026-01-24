@@ -30,6 +30,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         name: dist
+        path: dist
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -47,6 +48,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         name: dist
+        path: dist
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
