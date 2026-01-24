@@ -1,5 +1,8 @@
 jobs:
   build:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6

@@ -287,6 +287,10 @@
             };
             jobs.build = {
               runs-on = "macos-latest";
+              permissions = {
+                id-token = "write";
+                contents = "read";
+              };
               steps = [
                 { uses = "actions/checkout@v6"; }
                 {
